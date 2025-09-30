@@ -8,13 +8,15 @@
   },
   "scripts": {
     "dev": "npm run build && npm run test:basic",
-    "build": "kompile src/ts-main.k --output-definition compiled",
+    "build": "kompile src/ts-main.k --output-definition compiled && echo 'Kompile successful'",
     "test": "krun --definition compiled/ts-main.k",
-    "test:basic": "for file in tests/basic/*.ts; do echo \"Testing: $file\"; krun --definition compiled \"$file\"; done"
+    "test:basic": "for file in tests/basic/*.ts; do echo \"Testing: $file\"; krun --definition compiled \"$file\"; done",
+    "watch": "chokidar 'src/**/*' -c 'npm run build' --initial"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "chokidar-cli": "^3.0.0"
   }
 }

@@ -1,5 +1,5 @@
-requires "ts-syntax.k"
+requires "ts-main-syntax.k"
 
 module TS-MAIN
-    imports TS-SYNTAX
+    imports TS-MAIN-SYNTAX
 endmodule
