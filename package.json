@@ -1,0 +1,20 @@
+{
+  "name": "k-ts",
+  "version": "0.0.1",
+  "description": "K semantics for TypeScript",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "npm run build && npm run test:basic",
+    "build": "kompile src/ts-main.k --output-definition compiled",
+    "test": "krun --definition compiled/ts-main.k",
+    "test:basic": "for file in tests/basic/*.ts; do echo \"Testing: $file\"; krun --definition compiled \"$file\"; done"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^4.9.5"
+  }
+}
