@@ -1,3 +1,4 @@
 cheatsheet.md
 node_modules
 compiled/*
+*.code-workspace
