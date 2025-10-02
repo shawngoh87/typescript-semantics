@@ -11,12 +11,17 @@
     "build": "kompile src/ts-main.k --output-definition compiled && echo 'Kompile successful'",
     "test": "krun --definition compiled/ts-main.k",
     "test:basic": "for file in tests/basic/*.ts; do echo \"Testing: $file\"; krun --definition compiled \"$file\"; done",
-    "watch": "chokidar 'src/**/*' -c 'npm run build' --initial"
+    "test:runner": "ts-node scripts/test-runner.ts --concurrency 2",
+    "test:watch": "chokidar 'src/**/*' 'tests/basic/**/*' -c 'ts-node scripts/test-runner.ts --concurrency 2' --initial",
+    "watch": "chokidar 'src/**/*' 'tests/basic/**/*' -c 'npm run build' --initial"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^4.9.5",
-    "chokidar-cli": "^3.0.0"
+    "@types/node": "^18.0.0",
+    "chokidar": "^4.0.3",
+    "chokidar-cli": "^3.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.9.5"
   }
 }
