@@ -102,11 +102,11 @@ async function runKrun(testFile: string): Promise<number> {
 	]);
 	if (stdout.trim().length > 0) {
 		console.log(`Completed: ${fileName}`);
-		// console.log(stdout.trim());
+		console.log(stdout.trim());
 	}
 	if (stderr.trim().length > 0) {
-		console.log(`Completed: ${fileName}`);
-		// console.error(stderr.trim());
+		console.log(`Error: ${fileName}`);
+		console.error(stderr.trim());
 	}
 	return exitCode;
 }
