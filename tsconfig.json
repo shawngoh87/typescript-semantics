@@ -11,6 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["scripts/**/*"],
+  "include": ["tests/basic/**/*"],
   "exclude": ["node_modules", "compiled"]
 }

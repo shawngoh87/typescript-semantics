@@ -1,10 +1,14 @@
+[tasks.get-test-directory]
+run = """
+echo tests/basic
+"""
+
 [tasks.srchash]
 run = """
 find src -type f -name '*.k' -print0 | sort -z | xargs -0 cat | sha1sum | awk '{print $1}'
 """
 
 [tasks.build]
-depends = ["srchash"]
 run = """
 mkdir -p build
 NEW_HASH=$(mise run srchash --quiet)
@@ -15,26 +19,50 @@ else
   OLD_HASH=""
 fi
 
-if [ "$NEW_HASH" = "$OLD_HASH" ]; then
+if [ -f build/last_build_succeed ]; then
+  LAST_BUILD_SUCCEED=$(cat build/last_build_succeed)
+else
+  LAST_BUILD_SUCCEED=false
+fi
+
+if [ "$NEW_HASH" = "$OLD_HASH" ] && [ "$LAST_BUILD_SUCCEED" = "true" ]; then
   echo 'Source hash unchanged, skipping build.'
+  echo false > build/has_new_build
   exit 0
 else
   echo "$NEW_HASH" > build/src_hash
   echo 'Rebuilding...'
-  kompile src/ts-main.k --output-definition compiled && echo 'Kompile successful'
+  if kompile src/ts-main.k --output-definition compiled; then
+    echo 'Kompile successful'
+    echo true > build/has_new_build
+    echo true > build/last_build_succeed
+  else
+    echo 'Kompile failed'
+    echo false > build/last_build_succeed
+    exit 1
+  fi
 fi
 """
 sources = ['src/**/*']
 
 [tasks.testhash]
+depends = ["build"]
 run = """
 mkdir -p build
 
+TEST_DIRECTORY=$(mise run get-test-directory --quiet)
+
+if [ -f build/has_new_build ] && grep -q true build/has_new_build; then
+  # New build, rerun all tests
+  find $TEST_DIRECTORY -type f > build/changed_tests
+  exit 0
+fi
+
 # Compute new hashes
-find tests -type f -print0 | sort -z | xargs -0 -I{} sh -c 'sha1sum "{}"' > build/test_hashes.new
+find $TEST_DIRECTORY -type f -print0 | sort -z | xargs -0 -I{} sh -c 'sha1sum "{}"' > build/test_hashes.new
 
 if [ -f build/test_hashes ]; then
-  echo 'Comparing test hashes...'
+  # echo 'Comparing test hashes...'
   sort build/test_hashes.new > build/test_hashes.new.sorted
   sort build/test_hashes > build/test_hashes.old.sorted
   comm -23 build/test_hashes.new.sorted build/test_hashes.old.sorted | awk '{print $2}' > build/changed_tests
@@ -64,4 +92,4 @@ echo "$CHANGED" | xargs -I{} -P $JOBS sh -c '
   krun --definition compiled "{}"
 '
 """
-sources = ['tests/**/*']
+sources = ['tests/**/*', 'src/**/*']

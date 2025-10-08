@@ -7,7 +7,8 @@
     "test": "tests"
   },
   "scripts": {
-    "test:watch": "mise watch -o restart -c clear test"
+    "clean": "rm -rf build",
+    "test:watch": "npm run clean && mise watch -o restart -c clear test"
   },
   "author": "",
   "license": "MIT",
