@@ -1,0 +1,67 @@
+[tasks.srchash]
+run = """
+find src -type f -name '*.k' -print0 | sort -z | xargs -0 cat | sha1sum | awk '{print $1}'
+"""
+
+[tasks.build]
+depends = ["srchash"]
+run = """
+mkdir -p build
+NEW_HASH=$(mise run srchash --quiet)
+
+if [ -f build/src_hash ]; then
+  OLD_HASH=$(cat build/src_hash)
+else
+  OLD_HASH=""
+fi
+
+if [ "$NEW_HASH" = "$OLD_HASH" ]; then
+  echo 'Source hash unchanged, skipping build.'
+  exit 0
+else
+  echo "$NEW_HASH" > build/src_hash
+  echo 'Rebuilding...'
+  kompile src/ts-main.k --output-definition compiled && echo 'Kompile successful'
+fi
+"""
+sources = ['src/**/*']
+
+[tasks.testhash]
+run = """
+mkdir -p build
+
+# Compute new hashes
+find tests -type f -print0 | sort -z | xargs -0 -I{} sh -c 'sha1sum "{}"' > build/test_hashes.new
+
+if [ -f build/test_hashes ]; then
+  echo 'Comparing test hashes...'
+  sort build/test_hashes.new > build/test_hashes.new.sorted
+  sort build/test_hashes > build/test_hashes.old.sorted
+  comm -23 build/test_hashes.new.sorted build/test_hashes.old.sorted | awk '{print $2}' > build/changed_tests
+  rm build/test_hashes.new.sorted build/test_hashes.old.sorted
+else
+  echo 'No previous test hashes found, running all tests...'
+  awk '{print $2}' build/test_hashes.new > build/changed_tests
+fi
+
+# Save new hashes for next run
+mv build/test_hashes.new build/test_hashes
+"""
+
+[tasks.test]
+depends = ["build", "testhash"]
+run = """
+mkdir -p build
+echo "Running changed tests:"
+CHANGED=$(cat build/changed_tests 2>/dev/null || true)
+if [ -z "$CHANGED" ]; then
+  echo "No changed tests, skipping."
+  exit 0
+fi
+JOBS=$(sysctl -n hw.ncpu)
+echo "$CHANGED" | xargs -I{} -P $JOBS sh -c '
+  echo "Running test: {}"
+  krun --definition compiled "{}"
+'
+"""
+sources = ['tests/**/*']

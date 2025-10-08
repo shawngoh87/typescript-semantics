@@ -1,6 +1,5 @@
 cheatsheet.md
 node_modules
 compiled/*
+build/*
 *.code-workspace
-
-scripts/watch-runner.ts
