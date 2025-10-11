@@ -1,14 +1,10 @@
-[tasks.get-test-directory]
-run = """
-echo tests/basic
-"""
-
 [tasks.srchash]
 run = """
 find src -type f -name '*.k' -print0 | sort -z | xargs -0 cat | sha1sum | awk '{print $1}'
 """
 
 [tasks.build]
+sources = ['src/**/*']
 run = """
 mkdir -p build
 NEW_HASH=$(mise run srchash --quiet)
@@ -32,7 +28,7 @@ if [ "$NEW_HASH" = "$OLD_HASH" ] && [ "$LAST_BUILD_SUCCEED" = "true" ]; then
 else
   echo "$NEW_HASH" > build/src_hash
   echo 'Rebuilding...'
-  if kompile src/ts-main.k --output-definition compiled; then
+  if kompile src/ts-main.k --output-definition compiled --gen-glr-bison-parser; then
     echo 'Kompile successful'
     echo true > build/has_new_build
     echo true > build/last_build_succeed
@@ -43,53 +39,3 @@ else
   fi
 fi
 """
-sources = ['src/**/*']
-
-[tasks.testhash]
-depends = ["build"]
-run = """
-mkdir -p build
-
-TEST_DIRECTORY=$(mise run get-test-directory --quiet)
-
-if [ -f build/has_new_build ] && grep -q true build/has_new_build; then
-  # New build, rerun all tests
-  find $TEST_DIRECTORY -type f > build/changed_tests
-  exit 0
-fi
-
-# Compute new hashes
-find $TEST_DIRECTORY -type f -print0 | sort -z | xargs -0 -I{} sh -c 'sha1sum "{}"' > build/test_hashes.new
-
-if [ -f build/test_hashes ]; then
-  # echo 'Comparing test hashes...'
-  sort build/test_hashes.new > build/test_hashes.new.sorted
-  sort build/test_hashes > build/test_hashes.old.sorted
-  comm -23 build/test_hashes.new.sorted build/test_hashes.old.sorted | awk '{print $2}' > build/changed_tests
-  rm build/test_hashes.new.sorted build/test_hashes.old.sorted
-else
-  echo 'No previous test hashes found, running all tests...'
-  awk '{print $2}' build/test_hashes.new > build/changed_tests
-fi
-
-# Save new hashes for next run
-mv build/test_hashes.new build/test_hashes
-"""
-
-[tasks.test]
-depends = ["build", "testhash"]
-run = """
-mkdir -p build
-echo "Running changed tests:"
-CHANGED=$(cat build/changed_tests 2>/dev/null || true)
-if [ -z "$CHANGED" ]; then
-  echo "No changed tests, skipping."
-  exit 0
-fi
-JOBS=$(sysctl -n hw.ncpu)
-echo "$CHANGED" | xargs -I{} -P $JOBS sh -c '
-  echo "Running test: {}"
-  krun --definition compiled "{}"
-'
-"""
-sources = ['tests/**/*', 'src/**/*']
