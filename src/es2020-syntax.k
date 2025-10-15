@@ -13,6 +13,13 @@ module ES2020-SYNTAX
     // TODO: Handle unicode 11.6
     syntax IdentifierName ::= r"[_$A-Za-z][_$A-Za-z0-9]*" [token]
 
+    // 11.8 Literals
+    // 11.8.1 Null Literals
+    syntax NullLiteral ::= "null"
+
+    // 11.8.2 Boolean Literals
+    syntax BooleanLiteral ::= "true" | "false"
+
     // 11.8.3 Numeric Literals
     // TODO: Verify and turn these into lexical syntax
     syntax NumericLiteral ::= DecimalLiteral
@@ -88,9 +95,9 @@ module ES2020-SYNTAX
     // 11.8.4 String Literals
     // TODO: Implement the complete spec of StringLiteral
     // syntax lexical SingleQuotedStringLiteral = r"'([^'\\\n\r]|\\([^\r\n1-9xu]|(\r?\n)|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}))*'"
-    syntax lexical SingleQuotedStringLiteral = r"'.*'"
-    syntax lexical DoubleQuotedStringLiteral = r"\\\".*\\\""
-    syntax StringLiteral ::= r"{SingleQuotedStringLiteral}" [token]
+    syntax SingleQuotedStringLiteral ::= r"'.*'" [token]
+    syntax DoubleQuotedStringLiteral ::= r"\\\".*\\\"" [token]
+    syntax StringLiteral ::= SingleQuotedStringLiteral | DoubleQuotedStringLiteral
 
 
     // 11.8.6 Template Literal Lexical Components
@@ -130,8 +137,36 @@ module ES2020-SYNTAX
 
     syntax SpreadElement ::= "..." AssignmentExpression
 
+    // 12.2 Primary Expression
+    syntax PrimaryExpression ::= "this"
+                              | IdentifierReference
+                              | Literal
+                              | ArrayLiteral
+                              | ObjectLiteral
+                              | FunctionExpression
+                              | ClassExpression
+                            //   | GeneratorExpression
+                            //   | AsyncFunctionExpression
+                            //   | AsyncGeneratorExpression
+                            //   | RegularExpressionLiteral
+                            //   | TemplateLiteral
+                              | CoverParenthesizedExpressionAndArrowParameterList
+
+    syntax CoverParenthesizedExpressionAndArrowParameterList ::=
+                                "(" Expression ")" 
+                                | "(" Expression "," ")"
+                                | "(" ")"
+                                | "(" "..." BindingIdentifier ")"
+                                | "(" "..." BindingPattern ")"
+                                | "(" Expression "," "..." BindingIdentifier ")"
+                                | "(" Expression "," "..." BindingPattern ")"
+    // 12.2.4 Literals
+    syntax Literal ::= NullLiteral
+                     | BooleanLiteral
+                     | NumericLiteral
+                     | StringLiteral
+
     // 12.2.6 Object Initializer
-    syntax PrimaryExpression ::= ObjectLiteral
     syntax ObjectLiteral ::= "{" "}"
                            | "{" PropertyDefinitionList "}"
                            | "{" PropertyDefinitionList "," "}"
@@ -150,26 +185,6 @@ module ES2020-SYNTAX
     syntax ComputedPropertyName ::= "[" AssignmentExpression "]"
     syntax CoverInitializedName ::= IdentifierReference Initializer
     syntax Initializer ::= "=" AssignmentExpression
-
-    syntax AssignmentExpression ::= ConditionalExpression
-                                 | YieldExpression
-                                 | ArrowFunction
-                                 | AsyncArrowFunction
-                                 | LeftHandSideExpression "=" AssignmentExpression
-                                 | LeftHandSideExpression AssignmentOperator AssignmentExpression
-
-    syntax AssignmentOperator ::= "*="
-                               | "/="
-                               | "%="
-                               | "+="
-                               | "-="
-                               | "<<="
-                               | ">>="
-                               | ">>>="
-                               | "&="
-                               | "^="
-                               | "|="
-                               | "**="
 
     // 12.2.9 Template Literals
     // TODO: handle template literals
@@ -323,12 +338,47 @@ module ES2020-SYNTAX
     syntax ConditionalExpression ::= ShortCircuitExpression
                                   | ShortCircuitExpression "?" AssignmentExpression ":" AssignmentExpression
 
+    // 12.15 Assignment Operators
+    syntax AssignmentExpression ::= ConditionalExpression
+                                 | YieldExpression
+                                 | ArrowFunction
+                                 | AsyncArrowFunction
+                                 | LeftHandSideExpression "=" AssignmentExpression
+                                 | LeftHandSideExpression AssignmentOperator AssignmentExpression
+
+    syntax AssignmentOperator ::= "*="
+                               | "/="
+                               | "%="
+                               | "+="
+                               | "-="
+                               | "<<="
+                               | ">>="
+                               | ">>>="
+                               | "&="
+                               | "^="
+                               | "|="
+                               | "**="
+
+
     // 12.16 Comma Operator
     syntax Expression ::= Expression "," AssignmentExpression 
                         | AssignmentExpression
 
     // 13. Statements
     syntax Statement ::= BlockStatement
+                       | VariableStatement
+                       | EmptyStatement
+                    //    | ExpressionStatement // TODO: Implement
+                       | IfStatement
+                       | BreakableStatement
+                       | ContinueStatement
+                       | BreakStatement
+                       | ReturnStatement
+                       | WithStatement
+                       | LabelledStatement
+                       | ThrowStatement
+                       | TryStatement
+                       | DebuggerStatement
     syntax Declaration ::= LexicalDeclaration
                         // | ClassDeclaration
                         // | HoistableDeclaration
@@ -336,8 +386,8 @@ module ES2020-SYNTAX
                                 // | GeneratorDeclaration
                                 // | AsyncFunctionDeclaration
                                 // | AsyncGeneratorDeclaration
-    // syntax BreakableStatement ::= IterationStatement
-    //                             | SwitchStatement
+    syntax BreakableStatement ::= IterationStatement
+                                | SwitchStatement
 
     // 13.2 Block
     syntax BlockStatement ::= Block
@@ -357,6 +407,14 @@ module ES2020-SYNTAX
                             // TODO: Check if this is the right syntax for optional
                             | BindingIdentifier
                             | BindingPattern Initializer
+
+    // 13.3.2 Variable Statement
+    syntax VariableStatement ::= "var" VariableDeclarationList ";"
+    syntax VariableDeclarationList ::= VariableDeclaration
+                                     | VariableDeclarationList "," VariableDeclaration
+    syntax VariableDeclaration ::= BindingIdentifier
+                                | BindingIdentifier Initializer
+                                | BindingPattern Initializer
 
     // 13.3.3 Destructuring Binding Patterns
     syntax BindingPattern ::= ObjectBindingPattern
@@ -401,6 +459,107 @@ module ES2020-SYNTAX
 
     syntax BindingRestElement ::= "..." BindingIdentifier
                                | "..." BindingPattern
+
+    // 13.4 Empty Statement
+    syntax EmptyStatement ::= ";"
+
+    // 13.5 Expression Statement
+    // TODO: implement
+
+    // 13.6 The if Statement
+    syntax IfStatement ::= "if" "(" Expression ")" Statement "else" Statement
+                         | "if" "(" Expression ")" Statement
+
+    // 13.7 Iteration Statements
+    syntax IterationStatement ::= "do" Statement "while" "(" Expression ")" ";"
+                                | "while" "(" Expression ")" Statement
+                                // for (a = 1;a < 0;a++)
+                                | "for" "(" Expression ";" Expression ";" Expression ")" Statement // TODO: Handle lookahead
+                                | "for" "(" Expression ";" Expression ";" ")" Statement
+                                | "for" "(" ";" Expression ";" Expression ")" Statement
+                                | "for" "(" Expression ";" ";" ")" Statement
+                                | "for" "(" ";" Expression ";" ")" Statement
+                                | "for" "(" ";" ";" Expression ")" Statement
+                                | "for" "(" ";" ";" ")" Statement
+                                // for (var a = 1; a < 0; a++)
+                                | "for" "(" "var" VariableDeclarationList ";" Expression ";" Expression ")" Statement
+                                | "for" "(" "var" VariableDeclarationList ";" Expression ";" ")" Statement
+                                | "for" "(" "var" VariableDeclarationList ";" ";" Expression ")" Statement
+                                | "for" "(" "var" VariableDeclarationList ";" ";" ")" Statement
+                                // for (let a = 1; a < 0; a++)
+                                | "for" "(" LexicalDeclaration Expression ";" Expression ")" Statement
+                                | "for" "(" LexicalDeclaration Expression ";" ")" Statement
+                                | "for" "(" LexicalDeclaration ";" Expression ")" Statement
+                                | "for" "(" LexicalDeclaration ";" ")" Statement
+                                // for (a.b of c)
+                                | "for" "(" LeftHandSideExpression "of" AssignmentExpression ")" Statement // TODO: Handle lookahead
+                                // for (var a in b)
+                                | "for" "(" "var" ForBinding "in" Expression ")" Statement
+                                // for (let a in b)
+                                | "for" "(" ForDeclaration "in" Expression ")" Statement
+                                // for await (...)
+                                | "for" "await" "(" LeftHandSideExpression "of" AssignmentExpression ")" Statement // TODO: Handle lookahead
+                                | "for" "await" "(" "var" ForBinding "of" AssignmentExpression ")" Statement
+                                | "for" "await" "(" ForDeclaration "of" AssignmentExpression ")" Statement
+
+    syntax ForDeclaration ::= LetOrConst ForBinding
+
+    syntax ForBinding ::= BindingIdentifier
+                       | BindingPattern
+
+    // 13.8 The continue Statement
+    syntax ContinueStatement ::= "continue" ";"
+                                | "continue" LabelIdentifier ";" // TODO: no line terminator
+    
+    // 13.9 The break Statement
+    syntax BreakStatement ::= "break" ";"
+                            | "break" LabelIdentifier ";" // TODO: no line terminator
+
+    // 13.10 The return Statement
+    syntax ReturnStatement ::= "return" ";"
+                            | "return" Expression ";" // TODO: no line terminator
+
+    // 13.11 The with Statement
+    syntax WithStatement ::= "with" "(" Expression ")" Statement
+
+    // 13.12 The switch Statement
+    syntax SwitchStatement ::= "switch" "(" Expression ")" CaseBlock
+    syntax CaseBlock ::= "{" CaseClauses "}"
+                        | "{" "}"
+                        | "{" CaseClauses DefaultClause CaseClauses "}"
+                        | "{" DefaultClause CaseClauses "}"
+                        | "{" CaseClauses DefaultClause "}"
+                        | "{" DefaultClause "}"
+    syntax CaseClauses ::= CaseClause
+                        | CaseClauses CaseClause
+    syntax CaseClause ::= "case" Expression ":" StatementList
+                        | "case" Expression ":"
+    syntax DefaultClause ::= "default" ":" StatementList
+                            | "default" ":"
+
+    // 13.13 Labelled Statements
+    syntax LabelledStatement ::= LabelIdentifier ":" LabelledItem
+    syntax LabelledItem ::= Statement
+                         | FunctionDeclaration
+
+    // 13.14 The throw Statement
+    syntax ThrowStatement ::= "throw" Expression ";" // TODO: no line terminator
+
+    // 13.15 The try Statement
+    syntax TryStatement ::= "try" Block Catch
+                          | "try" Block Finally
+                          | "try" Block Catch Finally
+
+    syntax Catch ::= "catch" "(" CatchParameter ")" Block
+                   | "catch" Block
+
+    syntax Finally ::= "finally" Block
+
+    syntax CatchParameter ::= BindingIdentifier
+                           | BindingPattern
+
+    // 13.16 The debugger Statement
+    syntax DebuggerStatement ::= "debugger" ";"
 
     // 14.1 Function Definitions
     syntax FunctionDeclaration ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}"
@@ -469,6 +628,28 @@ module ES2020-SYNTAX
                             | "yield" AssignmentExpression // TODO: no line terminator
                             | "yield" "*" AssignmentExpression //TODO: no line terminator
 
+    // 14.6 Class Definitions
+    syntax ClassDeclaration ::= "class" BindingIdentifier ClassTail
+                             | "class" ClassTail
+
+    syntax ClassExpression ::= "class" BindingIdentifier ClassTail
+                            | "class" ClassTail
+
+    syntax ClassTail ::= ClassHeritage "{" ClassBody "}"
+                        | ClassHeritage "{" "}"
+                        | "{" ClassBody "}"
+                        | "{" "}"
+
+    syntax ClassHeritage ::= "extends" LeftHandSideExpression
+
+    syntax ClassBody ::= ClassElementList
+
+    syntax ClassElementList ::= ClassElement
+                             | ClassElementList ClassElement
+
+    syntax ClassElement ::= MethodDefinition
+                         | "static" MethodDefinition
+                         | ";"
 
     // 14.8 Async Arrow Function Definitions
     // TODO: no line terminator
