@@ -3,10 +3,14 @@
     https://tc39.es/ecma262/2020
     
     TODO:
+    
     1. Figure out how to handle Automatic Semicolon Insertion (ASI). 
     The current parser assumes ASI is already ran and will likely fail some test262
     tests. Decide if ASI is part of the design goal (a complete parser) or 
     a complementary tool that runs AFTER a formatter.
+    
+    2. Define #Layout production to isolate LineTerminator so we can
+    handle no-line-terminator requirement of certain syntaxes
  */
 module ES2020-SYNTAX
     // 11.6 Names and Keywords
